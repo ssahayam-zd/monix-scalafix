@@ -24,4 +24,8 @@ Nested Task found
   def simpleLog(): Task[Unit] = {
     log("hello")
   }
+
+  def shouldHaveFlatMapped(): Task[Unit] = {
+    log("first log").map(_ =>  log("second log")) // assert: NoNestedTasks
+  }
 }
