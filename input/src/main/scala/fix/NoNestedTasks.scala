@@ -14,6 +14,8 @@ Nested Task found
 
   def log(message: String): Task[Unit] = Task(println(s"logged: $message")) // ok
 
+  def msg(message: String): Task[String] = Task.pure(message) // ok
+
   def nestedLog(): Task[Unit] = {
     Task(log("hello")) /* assert: NoNestedTasks
          ^^^^^^^^^^^^
@@ -30,6 +32,17 @@ Nested Task found
                          ^^^^^^^^^^^^^^^^^^^^^^^              
 Nested Task found
   */
+  }
 
+  def mapStillWorks(): Task[String] = {
+    msg("hello").map(_.toUpperCase()) // ok
+  }
+
+  def flatMapStillWorks(): Task[String] = {
+    msg("hello").flatMap(m => msg(s"$m there")) // ok
+  }
+
+  def flatMapStillWorksWithAnonymousFunction(): Task[String] = {
+    msg("hello").flatMap(_ => msg("My new message")) // ok
   }
 }
