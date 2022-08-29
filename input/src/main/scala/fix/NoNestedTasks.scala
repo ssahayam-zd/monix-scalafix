@@ -26,6 +26,10 @@ Nested Task found
   }
 
   def shouldHaveFlatMapped(): Task[Unit] = {
-    log("first log").map(_ =>  log("second log")) // assert: NoNestedTasks
+    log("first log").map(_ =>  log("second log")) /* assert: NoNestedTasks
+                         ^^^^^^^^^^^^^^^^^^^^^^^              
+Nested Task found
+  */
+
   }
 }
