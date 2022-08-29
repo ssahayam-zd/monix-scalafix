@@ -11,4 +11,17 @@ object NoNestedTasks {
                     ^^^^^^^
 Nested Task found
   */
+
+  def log(message: String): Task[Unit] = Task(println(s"logged: $message")) // ok
+
+  def nestedLog(): Task[Unit] = {
+    Task(log("hello")) /* assert: NoNestedTasks
+         ^^^^^^^^^^^^
+Nested Task found
+  */
+  }
+
+  def simpleLog(): Task[Unit] = {
+    log("hello")
+  }
 }
