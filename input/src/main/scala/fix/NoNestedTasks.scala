@@ -12,9 +12,16 @@ object NoNestedTasks {
 Nested Task found
   */
 
+  val nestedPure = Task.pure(Task("not so pure")) /* assert: NoNestedTasks
+                             ^^^^^^^^^^^^^^^^^^^
+Nested Task found
+  */
+
+
   def log(message: String): Task[Unit] = Task(println(s"logged: $message")) // ok
 
   def msg(message: String): Task[String] = Task.pure(message) // ok
+
 
   def nestedLog(): Task[Unit] = {
     Task(log("hello")) /* assert: NoNestedTasks

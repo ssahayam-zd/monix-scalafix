@@ -14,6 +14,7 @@ class NoNestedTasks extends SemanticRule("NoNestedTasks") {
   val TASK_M = SymbolMatcher.exact("monix/eval/Task.")
   val TASK_R = SymbolMatcher.exact("monix/eval/Task#")
   val TASK_MAP_FUNC = SymbolMatcher.exact("monix/eval/Task#map().")
+  val TASK_PURE_FUNC = SymbolMatcher.exact("monix/eval/Task.pure().")
 
   override def fix(implicit doc: SemanticDocument): Patch = {
     println("=================> Tree.structure: " + doc.tree.structureLabeled)
@@ -89,6 +90,12 @@ class NoNestedTasks extends SemanticRule("NoNestedTasks") {
                 Patch.lint(NestedTaskDiagnostic(mf))
               case _ => Patch.empty
             }
+
+    case  Term.Apply(
+            Term.Select(_, TASK_PURE_FUNC(_)),
+            (nested @ Term.Apply(TASK_M(_), _)) :: _
+          ) => Patch.lint(NestedTaskDiagnostic(nested))
+
     }.asPatch
   }
 }
