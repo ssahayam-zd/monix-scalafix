@@ -9,12 +9,12 @@ object NoNestedTasks {
 
   val nested = Task(Task(1)) /* assert: NoNestedTasks
                     ^^^^^^^
-Nested Task found
+Nested Task found: You're wrapping a Task with a Task
   */
 
   val nestedPure = Task.pure(Task("not so pure")) /* assert: NoNestedTasks
                              ^^^^^^^^^^^^^^^^^^^
-Nested Task found
+Nested Task found: You don't need to use `pure` to wrap a Task. A Task is pure already
   */
 
 
@@ -26,7 +26,7 @@ Nested Task found
   def nestedLog(): Task[Unit] = {
     Task(log("hello")) /* assert: NoNestedTasks
          ^^^^^^^^^^^^
-Nested Task found
+Nested Task found: You don't need to wrap the function: `log` in Task because it already returns Task
   */
   }
 
@@ -37,7 +37,7 @@ Nested Task found
   def shouldHaveFlatMapped(): Task[Unit] = {
     log("first log").map(_ =>  log("second log")) /* assert: NoNestedTasks
                          ^^^^^^^^^^^^^^^^^^^^^^^              
-Nested Task found
+Nested Task found: Try `flatMap` instead of `map`
   */
   }
 

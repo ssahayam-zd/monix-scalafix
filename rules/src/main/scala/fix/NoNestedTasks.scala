@@ -3,10 +3,10 @@ package fix
 import scalafix.v1._
 import scala.meta._
 
-final case class NestedTaskDiagnostic(term: Term) extends Diagnostic {
+final case class NestedTaskDiagnostic(term: Term, description: String) extends Diagnostic {
   override def position: Position = term.pos
   override def message: String = 
-    "Nested Task found"
+    s"Nested Task found: $description"
 }
 
 class NoNestedTasks extends SemanticRule("NoNestedTasks") {
@@ -19,9 +19,11 @@ class NoNestedTasks extends SemanticRule("NoNestedTasks") {
   override def fix(implicit doc: SemanticDocument): Patch = {
     // println("=================> Tree.structure: " + doc.tree.structureLabeled)
     doc.tree.collect {
+      // Example: Creating a Task with a Task: Task(Task(???))
       case  Term.Apply(TASK_M(x), (nested @ TASK_M(y)) :: _) =>
-        Patch.lint(NestedTaskDiagnostic(nested))
+        Patch.lint(NestedTaskDiagnostic(nested, "You're wrapping a Task with a Task"))
 
+      // Example: wrapping a function that returns a Task in a Task: Task(taskFunction)
       case  Term.Apply(TASK_M(x), (nested @ Term.Apply(arg, _)) :: _) =>
           val aSymbol: Symbol = arg.symbol
 
@@ -30,13 +32,14 @@ class NoNestedTasks extends SemanticRule("NoNestedTasks") {
           symbolInfo match {
             case Some(si) => 
               si.signature match {
-                case MethodSignature(_, _, TypeRef(prefix, TASK_R(_), _)) =>  Patch.lint(NestedTaskDiagnostic(nested))
+                case MethodSignature(_, _, TypeRef(prefix, TASK_R(_), _)) => Patch.lint(NestedTaskDiagnostic(nested, s"You don't need to wrap the function: `${aSymbol.displayName}` in Task because it already returns Task"))
                 case _ => Patch.empty
               }
                 
             case _ => Patch.empty
           }
           
+      // Example: mapping over a Task when you should have flatMapped: Task(???).map(_ => Task(???))
       case Term.Apply(
             Term.Select(
               _,
@@ -56,14 +59,15 @@ class NoNestedTasks extends SemanticRule("NoNestedTasks") {
             
             bodySig match {
               case Some(MethodSignature(_, _, TypeRef(_, TASK_R(_), _))) => 
-                Patch.lint(NestedTaskDiagnostic(mf))
+                Patch.lint(NestedTaskDiagnostic(mf, "Try `flatMap` instead of `map`"))
               case _ => Patch.empty
             }
 
+    // Example: Create Task inside Task.pure: Task.pure(Task(???))
     case  Term.Apply(
             Term.Select(_, TASK_PURE_FUNC(_)),
             (nested @ Term.Apply(TASK_M(_), _)) :: _
-          ) => Patch.lint(NestedTaskDiagnostic(nested))
+          ) => Patch.lint(NestedTaskDiagnostic(nested, "You don't need to use `pure` to wrap a Task. A Task is pure already"))
 
     }.asPatch
   }
