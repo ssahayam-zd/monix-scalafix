@@ -38,9 +38,42 @@ class NoNestedTasks extends SemanticRule("NoNestedTasks") {
                 
             case _ => Patch.empty
           }
-          
+
+      // TODO: We might need this for a corner case. Delete if we can prove otherwise
       // Example: mapping over a Task when you should have flatMapped: Task(???).map(_ => Task(???))
-      case Term.Apply(
+      // case abc @ Term.Apply(
+      //       Term.Select(
+      //         Term.Apply(Term.Name("Task"), _),
+      //         Term.Name("map")
+      //       ),
+      //       List(
+      //         Term.Function(
+      //           _,
+      //           Term.Apply(Term.Name("Task"), _)
+      //         )
+      //       )
+      //     ) =>  Patch.lint(NestedTaskDiagnostic(abc, "1 Try `flatMap` instead of `map`"))
+
+    // Example: mapping over a Task when you should have flatMapped: log(???).map(_ => Task(???))
+     case xyz @ Term.Apply(
+            Term.Select(
+              _,
+              TASK_MAP_FUNC(n)
+            ),
+            List(
+              mf @ Term.Function(
+                _,
+                Term.Apply(
+                   TASK_M(_),
+                   _
+                )
+              )
+            )
+          ) => 
+              Patch.lint(NestedTaskDiagnostic(mf, "Try `flatMap` instead of `map`"))
+
+      // Example: mapping over a Task when you should have flatMapped: Task(???).map(_ => Task(???))
+      case xyz @ Term.Apply(
             Term.Select(
               _,
               TASK_MAP_FUNC(n)
@@ -52,7 +85,6 @@ class NoNestedTasks extends SemanticRule("NoNestedTasks") {
               )
             )
           ) =>
-
             val bodySymbol = body.symbol
             val bodySymbolInfo = bodySymbol.info
             val bodySig = bodySymbolInfo.map(_.signature)

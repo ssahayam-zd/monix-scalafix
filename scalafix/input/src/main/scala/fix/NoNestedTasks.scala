@@ -41,6 +41,69 @@ Nested Task found: Try `flatMap` instead of `map`
   */
   }
 
+ 
+  // Basic for-comp with functions that return Task
+  def forCompShouldHaveFlatMapped(): Task[Unit] = {
+    for {
+      _ <- log("first log")
+      _ <- log("second log").map(_ => Task(println("third"))) /* assert: NoNestedTasks
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^              
+Nested Task found: Try `flatMap` instead of `map`
+*/      
+    } yield ()
+  }
+
+  // Function that returns Task followed by 
+  // another Function that takes multiple parameters and returns Task with another function that returns Task
+  def forCompShouldHaveFlatMapped2(): Task[Unit] = {
+    val extra = Task("the end")
+    for {
+      _ <- log("first log")
+      _ <- extendedLog("additional", Severity.Medium, "second log", extra).map(_ => log("third")) // assert: NoNestedTasks
+    } yield ()
+  }
+
+  // Task() and Task followed by
+  // Function that returns Task and Task()
+  def forCompShouldHaveFlatMapped3(): Task[Unit] = {
+    for {
+      _ <- Task(1).map(_ => Task(2))  /* assert: NoNestedTasks
+                       ^^^^^^^^^^^^              
+Nested Task found: Try `flatMap` instead of `map`
+  */
+
+      _ <- log("second log").map(_ => Task(2)) /* assert: NoNestedTasks
+                                 ^^^^^^^^^^^^              
+Nested Task found: Try `flatMap` instead of `map`
+  */
+
+    } yield ()
+  }
+
+  // Task() followed by
+  // Task() and function that returns Task
+  def forCompShouldHaveFlatMapped4(): Task[Unit] = {
+    for {
+      _ <- Task(1)
+      _ <- Task(2).map(_ => log("second log")) /* assert: NoNestedTasks
+                       ^^^^^^^^^^^^^^^^^^^^^^              
+Nested Task found: Try `flatMap` instead of `map`
+  */
+    } yield ()
+  }
+
+  sealed trait Severity
+
+  object Severity {
+    case object Low extends Severity
+    case object Medium extends Severity
+    case object High extends Severity    
+  }
+
+  private def extendedLog(context: String, severity: Severity, message: String, other: Task[String]): Task[Unit] = {
+    other.flatMap(o => log(s"[$severity] $context: $message $o"))
+  }
+
   def mapStillWorks(): Task[String] = {
     msg("hello").map(_.toUpperCase()) // ok
   }

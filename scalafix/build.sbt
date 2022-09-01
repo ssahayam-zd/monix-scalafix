@@ -23,7 +23,7 @@ inThisBuild(
   )
 )
 
-lazy val `surprises` = (project in file("."))
+lazy val `monix-scalafix` = (project in file("."))
   .aggregate(
     rules.projectRefs ++
       input.projectRefs ++
