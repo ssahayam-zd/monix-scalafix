@@ -92,6 +92,28 @@ Nested Task found: Try `flatMap` instead of `map`
     } yield ()
   }
 
+  // Mapping a Task val with a function that returns a Task
+  def forCompShouldHaveFlatMapped5(): Task[Unit] = {
+    val extra = Task("the end")
+    for {
+      _ <- log("first log").map(_ => extra) /* assert: NoNestedTasks
+                                ^^^^^^^^^^              
+Nested Task found: Try `flatMap` instead of `map`
+  */
+    } yield ()
+  }
+
+  // Mapping a function that returns a Task from a val Task
+  def forCompShouldHaveFlatMapped6(): Task[Unit] = {
+    val extra = Task("the end")
+    for {
+      _ <- extra.map(_ => log("first log")) /* assert: NoNestedTasks
+                     ^^^^^^^^^^^^^^^^^^^^^             
+Nested Task found: Try `flatMap` instead of `map`
+  */
+    } yield ()
+  }
+
   sealed trait Severity
 
   object Severity {

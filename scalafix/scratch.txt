@@ -1,0 +1,1 @@
+scalafix --rules=file:/Users/sanjiv.sahayam/Code/tools/monix-scalafix/scalafix/rules/src/main/scala/fix/NoNestedTasks.scala

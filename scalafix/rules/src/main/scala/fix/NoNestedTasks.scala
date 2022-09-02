@@ -92,8 +92,20 @@ class NoNestedTasks extends SemanticRule("NoNestedTasks") {
             bodySig match {
               case Some(MethodSignature(_, _, TypeRef(_, TASK_R(_), _))) => 
                 Patch.lint(NestedTaskDiagnostic(mf, "Try `flatMap` instead of `map`"))
-              case _ => Patch.empty
+
+
+              /** Example: Mapping a Task val with a function that returns a Task:
+               * val someTask = Task[Int]
+               * for {
+               *   _ <- logInfo("whatever").map(_ => someTask)
+               * } yield ()
+               */
+              case Some(ValueSignature(TypeRef(_, TASK_R(_), _))) => 
+                Patch.lint(NestedTaskDiagnostic(mf, "Try `flatMap` instead of `map`"))
+              case _ => 
+                Patch.empty
             }
+
 
     // Example: Create Task inside Task.pure: Task.pure(Task(???))
     case  Term.Apply(
